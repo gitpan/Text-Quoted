@@ -17,7 +17,7 @@
 #     NAME => q[Text::Quoted]
 #     NO_META => q[1]
 #     PREREQ_PM => { Text::Autoformat=>q[0], Text::Tabs=>q[0] }
-#     VERSION => q[1.7]
+#     VERSION => q[1.8]
 #     dist => { PREOP=>q[$(PERL) -I. -MModule::Install::Admin -e "dist_preop(q($(DISTVNAME)))"] }
 
 # --- MakeMaker post_initialize section:
@@ -57,11 +57,11 @@ AR_STATIC_ARGS = cr
 DIRFILESEP = /
 NAME = Text::Quoted
 NAME_SYM = Text_Quoted
-VERSION = 1.7
+VERSION = 1.8
 VERSION_MACRO = VERSION
-VERSION_SYM = 1_7
+VERSION_SYM = 1_8
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 1.7
+XS_VERSION = 1.8
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
 INST_ARCHLIB = blib/arch
@@ -242,7 +242,7 @@ RCS_LABEL = rcs -Nv$(VERSION_SYM): -q
 DIST_CP = best
 DIST_DEFAULT = tardist
 DISTNAME = Text-Quoted
-DISTVNAME = Text-Quoted-1.7
+DISTVNAME = Text-Quoted-1.8
 
 
 # --- MakeMaker macro section:
@@ -671,7 +671,7 @@ testdb_static :: testdb_dynamic
 # --- MakeMaker ppd section:
 # Creates a PPD (Perl Package Description) for a binary distribution.
 ppd:
-	$(NOECHO) $(ECHO) '<SOFTPKG NAME="$(DISTNAME)" VERSION="1,7,0,0">' > $(DISTNAME).ppd
+	$(NOECHO) $(ECHO) '<SOFTPKG NAME="$(DISTNAME)" VERSION="1,8,0,0">' > $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <TITLE>$(DISTNAME)</TITLE>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <ABSTRACT>Extract the structure of a quoted mail message</ABSTRACT>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <AUTHOR>Jesse Vincent &lt;jesse@bestpractical.com&gt;</AUTHOR>' >> $(DISTNAME).ppd

@@ -1,5 +1,5 @@
 package Text::Quoted;
-our $VERSION = "1.0";
+our $VERSION = "1.1";
 use 5.006;
 use strict;
 use warnings;
@@ -93,19 +93,20 @@ sub organize {
     # structure of the list.
     while (@todo) {
         my $line = shift @todo;
-        if ($line->{quoter} eq $top_level) {
+        if (defn($line->{quoter}) eq defn($top_level)) {
             # Just append lines at "my" level.
             push @ret, $line;
-        } elsif ($line->{quoter} =~ /^$top_level.+/) {
+        } elsif (defn($line->{quoter}) =~ /^$top_level.+/) {
             # Find all the lines at a quoting level "below" me.
             my $newquoter = find_below($top_level, $line, @todo);
             my @next = $line;
             push @next, shift @todo 
-                while $todo[0]->{quoter} =~ /^$newquoter/;
+                while defined $todo[0]->{quoter} 
+                      and $todo[0]->{quoter} =~ /^$newquoter/;
             # Find the 
             # And pass them on to organize()!
             push @ret, organize($newquoter, @next);
-        }  else { die "bugger!\n"; }
+        }#  else { die "bugger! I had $top_level, but now I have $line->{raw}\n"; }
     }
     return \@ret;
 }

@@ -1,5 +1,5 @@
 package Text::Quoted;
-our $VERSION = "1.1";
+our $VERSION = "1.2";
 use 5.006;
 use strict;
 use warnings;
@@ -95,16 +95,20 @@ sub organize {
         my $line = shift @todo;
         if (defn($line->{quoter}) eq defn($top_level)) {
             # Just append lines at "my" level.
-            push @ret, $line;
-        } elsif (defn($line->{quoter}) =~ /^$top_level.+/) {
+            push @ret, $line 
+                if exists $line->{quoter} or exists $line->{empty};
+        } elsif (defn($line->{quoter}) =~ /^\Q$top_level\E.+/) {
             # Find all the lines at a quoting level "below" me.
             my $newquoter = find_below($top_level, $line, @todo);
             my @next = $line;
             push @next, shift @todo 
                 while defined $todo[0]->{quoter} 
-                      and $todo[0]->{quoter} =~ /^$newquoter/;
+                      and $todo[0]->{quoter} =~ /^\Q$newquoter/;
             # Find the 
             # And pass them on to organize()!
+            #print "Trying to organise the following lines over $newquoter:\n";
+            #print $_->{raw}."\n" for @next;
+            #print "!-!-!-\n";
             push @ret, organize($newquoter, @next);
         }#  else { die "bugger! I had $top_level, but now I have $line->{raw}\n"; }
     }
@@ -124,19 +128,26 @@ sub organize {
 
 sub find_below {
     my ($top_level, @stuff) = @_;
+    #print "## Looking for the next level of quoting after $top_level\n";
+    #print "## We have:\n";
+    #print "## $_->{raw}\n" for @stuff;
 
     my @prefices = sort { length $a <=> length $b } 
                    map { $_->{quoter} } @stuff;
     # Find the prefices, shortest first.
+
+    # return $prefices[0] if $prefices[0] eq $prefices[-1];
  
     for (@prefices) { 
         # And return the first one which is "below" where we are right
         # now but is a proper subset of the next line. 
-        if ($_ =~ /^$top_level.+/ and $stuff[0]->{quoter} =~ /$_/) {
+        next unless $_;
+        if ($_ =~ /^\Q$top_level\E.+/ and $stuff[0]->{quoter} =~ /\Q$_\E/) {
+            #print "## We decided on $_\n";
             return $_;
         }
     }
-    die "I'm pretty sure this can't happen";
+    die "Can't happen";
 }
 
 # Everything below this point is essentially Text::Autoformat.

@@ -4,6 +4,9 @@
 use Test::More tests => 1;
 use Text::Quoted;
 
+# I don't really care what the results are, so long as we don't
+# segfault.
+
 my $ntk = <<NTK;
  _   _ _____ _  __ <*the* weekly high-tech sarcastic update for the uk>
 | \ | |_   _| |/ / _ __   __2002-07-26_ o join! mail an empty message to
@@ -39,7 +42,7 @@ $expected = [
     [
       {
         'quoter' => '| |  | | | |',
-        'text' => '| | | | (_)  v  v /  o website (+ archive) lives at:',
+        'text' => '. | | | | (_)  v  v /  o website (+ archive) lives at:',
         'raw' => '| |  | | | | .  | | | | (_)  v  v /  o website (+ archive) lives at:',
         'empty' => 0
       }

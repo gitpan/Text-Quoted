@@ -1,5 +1,5 @@
 package Text::Quoted;
-our $VERSION = "1.3";
+our $VERSION = "1.4";
 use 5.006;
 use strict;
 use warnings;
@@ -155,7 +155,7 @@ sub find_below {
 # BITS OF A TEXT LINE
 
 my $quotechar = qq{[!#%=|:]};
-my $quotechunk = qq{(?:$quotechar(?![a-z])|[a-z]*>+)};
+my $quotechunk = qq{(?:$quotechar(?![a-z0-9])|[a-z0-9]*>+)};
 my $quoter = qq{(?:(?i)(?:$quotechunk(?:[ \\t]*$quotechunk)*))};
 
 my $separator = q/(?:[-_]{2,}|[=#*]{3,}|[+~]{4,})/;
@@ -258,6 +258,12 @@ sub classify
 		}
 	}
 
+        # Reapply hangs
+    for (@paras) {
+        next unless my $hang = $_->{hang};
+        next unless $hang->stringify;
+        $_->{text} = $hang->stringify . " ".$_->{text};
+    }
     return @paras;
 }
 

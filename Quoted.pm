@@ -1,15 +1,15 @@
 package Text::Quoted;
-our $VERSION = "1.5";
+our $VERSION = "1.6";
 use 5.006;
 use strict;
 use warnings;
 
 require Exporter;
 
-our @ISA = qw(Exporter);
+our @ISA    = qw(Exporter);
 our @EXPORT = qw(extract);
 
-use Text::Autoformat (); # Provides the Hang package, heh, heh.
+use Text::Autoformat();    # Provides the Hang package, heh, heh.
 
 =head1 NAME
 
@@ -59,14 +59,14 @@ is the quotation string.
 =cut
 
 sub extract {
-    my $text = shift;
+    my $text  = shift;
     my @paras = classify($text);
     my @needed;
     for my $p (@paras) {
         push @needed, { map { $_ => $p->{$_} } qw(raw empty text quoter) };
     }
-    
-    return organize("",@needed);
+
+    return organize( "", @needed );
 }
 
 =head1 CREDITS
@@ -76,41 +76,49 @@ C<Text::Autoformat>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2002 Kasei Limited
+Copyright (C) 2002-2003 Kasei Limited
+Copyright (C) 2003-2004 Simon Cozens
+Copyright (C) 2004 Best Practical Solutions, LLC
 
 This software is distributed WITHOUT ANY WARRANTY; without even the implied
 warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-It may be used and redistributed under the terms of the Artistic License.
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself. 
 
 =cut
 
 sub organize {
     my $top_level = shift;
-    my @todo = @_;
+    my @todo      = @_;
     my @ret;
+
     # Recursively form a data structure which reflects the quoting
     # structure of the list.
     while (@todo) {
         my $line = shift @todo;
-        if (defn($line->{quoter}) eq defn($top_level)) {
+        if ( defn( $line->{quoter} ) eq defn($top_level) ) {
+
             # Just append lines at "my" level.
-            push @ret, $line 
-                if exists $line->{quoter} or exists $line->{empty};
-        } elsif (defn($line->{quoter}) =~ /^\Q$top_level\E.+/) {
+            push @ret, $line
+              if exists $line->{quoter}
+              or exists $line->{empty};
+        }
+        elsif ( defn( $line->{quoter} ) =~ /^\Q$top_level\E.+/ ) {
+
             # Find all the lines at a quoting level "below" me.
-            my $newquoter = find_below($top_level, $line, @todo);
+            my $newquoter = find_below( $top_level, $line, @todo );
             my @next = $line;
-            push @next, shift @todo 
-                while defined $todo[0]->{quoter} 
-                      and $todo[0]->{quoter} =~ /^\Q$newquoter/;
+            push @next, shift @todo while defined $todo[0]->{quoter}
+              and $todo[0]->{quoter} =~ /^\Q$newquoter/;
+
             # Find the 
             # And pass them on to organize()!
             #print "Trying to organise the following lines over $newquoter:\n";
             #print $_->{raw}."\n" for @next;
             #print "!-!-!-\n";
-            push @ret, organize($newquoter, @next);
-        }#  else { die "bugger! I had $top_level, but now I have $line->{raw}\n"; }
+            push @ret, organize( $newquoter, @next );
+        } #  else { die "bugger! I had $top_level, but now I have $line->{raw}\n"; }
     }
     return \@ret;
 }
@@ -127,22 +135,25 @@ sub organize {
 # works out which is the next level below us.
 
 sub find_below {
-    my ($top_level, @stuff) = @_;
+    my ( $top_level, @stuff ) = @_;
+
     #print "## Looking for the next level of quoting after $top_level\n";
     #print "## We have:\n";
     #print "## $_->{raw}\n" for @stuff;
 
-    my @prefices = sort { length $a <=> length $b } 
-                   map { $_->{quoter} } @stuff;
+    my @prefices = sort { length $a <=> length $b } map { $_->{quoter} } @stuff;
+
     # Find the prefices, shortest first.
 
     # return $prefices[0] if $prefices[0] eq $prefices[-1];
- 
-    for (@prefices) { 
+
+    for (@prefices) {
+
         # And return the first one which is "below" where we are right
         # now but is a proper subset of the next line. 
         next unless $_;
-        if ($_ =~ /^\Q$top_level\E.+/ and $stuff[0]->{quoter} =~ /\Q$_\E/) {
+        if ( $_ =~ /^\Q$top_level\E.+/ and $stuff[0]->{quoter} =~ /\Q$_\E/ ) {
+
             #print "## We decided on $_\n";
             return $_;
         }
@@ -154,115 +165,109 @@ sub find_below {
 
 # BITS OF A TEXT LINE
 
-my $quotechar = qq{[!#%=|:]};
+my $quotechar  = qq{[!#%=|:]};
 my $quotechunk = qq{(?:$quotechar(?!\\w)|\\w*>+)};
-my $quoter = qq{(?:(?i)(?:$quotechunk(?:[ \\t]*$quotechunk)*))};
+my $quoter     = qq{(?:(?i)(?:$quotechunk(?:[ \\t]*$quotechunk)*))};
 
 my $separator = q/(?:[-_]{2,}|[=#*]{3,}|[+~]{4,})/;
 
-sub defn($) { return $_[0] if defined $_[0]; return ""; }
+sub defn($) { return $_[0] if (defined $_[0]); return "" }
 
-sub classify
-{
-    my $text = shift;
-	# DETABIFY
-	my @rawlines = split /\n/, $text;
-	use Text::Tabs;
-	@rawlines = expand(@rawlines);
+sub classify {
+    my $text = shift || ""; # If the user passes in a null string, we really want to end up with _something_
 
-	# PARSE EACH LINE
+    # DETABIFY
+    my @rawlines = split /\n/, $text;
+    use Text::Tabs;
+    @rawlines = expand(@rawlines);
 
-	my $pre = 0;
-	my @lines;
-	foreach (@rawlines)
-	{
-			push @lines, { raw	   => $_ };
-			s/\A([ \t]*)($quoter?)([ \t]*)//;
-			$lines[-1]{presig} =  $lines[-1]{prespace}   = defn $1;
-			$lines[-1]{presig} .= $lines[-1]{quoter}     = defn $2;
-			$lines[-1]{presig} .= $lines[-1]{quotespace} = defn $3;
-			$lines[-1]{hang}       = defn(Hang->new($_));
+use Data::Dumper;print scalar Dumper \@rawlines;
 
-			s/([ \t]*)(.*?)(\s*)$//;
-			$lines[-1]{hangspace} = defn $1;
-			$lines[-1]{text} = defn $2;
-			$lines[-1]{empty} = $lines[-1]{hang}->empty() && $2 !~ /\S/;
-			$lines[-1]{separator} = $lines[-1]{text} =~ /^$separator$/;
-	}
+    # PARSE EACH LINE
 
-	# SUBDIVIDE DOCUMENT INTO COHERENT SUBSECTIONS
+    my $pre = 0;
+    my @lines;
+    foreach (@rawlines) {
+        push @lines, { raw => $_};
+        s/\A([ \t]*)($quoter?)([ \t]*)//;
+        $lines[-1]{presig} = $lines[-1]{prespace} = defn $1;
+        $lines[-1]{presig} .= $lines[-1]{quoter}     = defn $2;
+        $lines[-1]{presig} .= $lines[-1]{quotespace} = defn $3;
+        $lines[-1]{hang} = defn( Hang->new($_) );
 
-	my @chunks;
-	push @chunks, [shift @lines];
-	foreach my $line (@lines)
-	{
-		if ($line->{separator} ||
-		    $line->{quoter} ne $chunks[-1][-1]->{quoter} ||
-		    $line->{empty} ||
-		    @chunks && $chunks[-1][-1]->{empty})
-		{
-			push @chunks, [$line];
-		}
-		else
-		{
-			push @{$chunks[-1]}, $line;
-		}
-	}
+        s/([ \t]*)(.*?)(\s*)$//;
+        $lines[-1]{hangspace} = defn $1;
+        $lines[-1]{text}      = defn $2;
+        $lines[-1]{empty}     = $lines[-1]{hang}->empty() && $2 !~ /\S/;
+        $lines[-1]{separator} = $lines[-1]{text} =~ /^$separator$/;
+    }
 
-	# REDIVIDE INTO PARAGRAPHS
+    # SUBDIVIDE DOCUMENT INTO COHERENT SUBSECTIONS
 
-	my @paras;
-	foreach my $chunk ( @chunks )
-	{
-		my $first = 1;
-		my $firstfrom;
-		foreach my $line ( @{$chunk} )
-		{
-			if ($first ||
-			    $line->{quoter} ne $paras[-1]->{quoter} ||
-			    $paras[-1]->{separator}
-			   )
-			{
-				push @paras, $line;
-				$first = 0;
-				$firstfrom = length($line->{raw}) - length($line->{text});
-			}
-			else
-			{
-    my $extraspace = length($line->{raw}) - length($line->{text}) - $firstfrom;
-				$paras[-1]->{text} .= "\n" . q{ }x$extraspace . $line->{text};
-				$paras[-1]->{raw} .= "\n" . $line->{raw};
-			}
-		}
-	}
+    my @chunks;
+    push @chunks, [ shift @lines ];
+    foreach my $line (@lines) {
+        if ( $line->{separator}
+            || $line->{quoter} ne $chunks[-1][-1]->{quoter}
+            || $line->{empty}
+            || @chunks && $chunks[-1][-1]->{empty} )
+        {
+            push @chunks, [$line];
+        }
+        else {
+            push @{ $chunks[-1] }, $line;
+        }
+    }
 
-	my $remainder = "";
+    # REDIVIDE INTO PARAGRAPHS
 
-	# ALIGN QUOTERS
-	# DETERMINE HANGING MARKER TYPE (BULLET, ALPHA, ROMAN, ETC.)
+    my @paras;
+    foreach my $chunk (@chunks) {
+        my $first = 1;
+        my $firstfrom;
+        foreach my $line ( @{$chunk} ) {
+            if ( $first
+                || $line->{quoter} ne $paras[-1]->{quoter}
+                || $paras[-1]->{separator} )
+            {
+                push @paras, $line;
+                $first     = 0;
+		# We get warnings from undefined raw and text values if we don't supply alternates
+                $firstfrom = length( $line->{raw} ||0 ) - length( $line->{text} || 0);
+            }
+            else {
+                my $extraspace =
+                  length( $line->{raw} ) - length( $line->{text} ) - $firstfrom;
+                $paras[-1]->{text} .= "\n" . q{ } x $extraspace . $line->{text};
+                $paras[-1]->{raw} .= "\n" . $line->{raw};
+            }
+        }
+    }
 
-	my %sigs;
-	my $lastquoted = 0;
-	my $lastprespace = 0;
-	for my $i ( 0..$#paras )
-	{
-		my $para = $paras[$i];
-	 if ($para->{quoter})
-		{
-			if ($lastquoted) { $para->{prespace} = $lastprespace }
-			else		 { $lastquoted = 1; $lastprespace = $para->{prespace} }
-		}
-		else
-		{
-			$lastquoted = 0;
-		}
-	}
+    my $remainder = "";
 
-        # Reapply hangs
+    # ALIGN QUOTERS
+    # DETERMINE HANGING MARKER TYPE (BULLET, ALPHA, ROMAN, ETC.)
+
+    my %sigs;
+    my $lastquoted   = 0;
+    my $lastprespace = 0;
+    for my $i ( 0 .. $#paras ) {
+        my $para = $paras[$i];
+        if ( $para->{quoter} ) {
+            if ($lastquoted) { $para->{prespace} = $lastprespace }
+            else { $lastquoted = 1; $lastprespace = $para->{prespace} }
+        }
+        else {
+            $lastquoted = 0;
+        }
+    }
+
+    # Reapply hangs
     for (@paras) {
         next unless my $hang = $_->{hang};
         next unless $hang->stringify;
-        $_->{text} = $hang->stringify . " ".$_->{text};
+        $_->{text} = $hang->stringify . " " . $_->{text};
     }
     return @paras;
 }

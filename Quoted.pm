@@ -1,5 +1,5 @@
 package Text::Quoted;
-our $VERSION = "1.2";
+our $VERSION = "1.3";
 use 5.006;
 use strict;
 use warnings;
@@ -177,15 +177,13 @@ sub classify
 	foreach (@rawlines)
 	{
 			push @lines, { raw	   => $_ };
-			s/\A([ \t]*)($quoter?)([ \t]*)//
-				or die "Internal Error ($@) on '$_'";
+			s/\A([ \t]*)($quoter?)([ \t]*)//;
 			$lines[-1]{presig} =  $lines[-1]{prespace}   = defn $1;
 			$lines[-1]{presig} .= $lines[-1]{quoter}     = defn $2;
 			$lines[-1]{presig} .= $lines[-1]{quotespace} = defn $3;
 			$lines[-1]{hang}       = defn(Hang->new($_));
 
-			s/([ \t]*)(.*?)(\s*)$//
-				or die "Internal Error ($@) on '$_'";
+			s/([ \t]*)(.*?)(\s*)$//;
 			$lines[-1]{hangspace} = defn $1;
 			$lines[-1]{text} = defn $2;
 			$lines[-1]{empty} = $lines[-1]{hang}->empty() && $2 !~ /\S/;

@@ -1,13 +1,16 @@
-#line 1 "inc/Module/Install/MakeMaker.pm - /usr/local/share/perl/5.8.3/Module/Install/MakeMaker.pm"
-# $File: //depot/cpan/Module-Install/lib/Module/Install/MakeMaker.pm $ $Author: autrijus $
-# $Revision: #11 $ $Change: 1781 $ $DateTime: 2003/10/22 17:14:03 $ vim: expandtab shiftwidth=4
-
+#line 1
 package Module::Install::MakeMaker;
-use Module::Install::Base; @ISA = qw(Module::Install::Base);
 
-$VERSION = '0.01';
-
+use strict;
+use Module::Install::Base;
 use ExtUtils::MakeMaker ();
+
+use vars qw{$VERSION $ISCORE @ISA};
+BEGIN {
+	$VERSION = '0.64';
+	$ISCORE  = 1;
+	@ISA     = qw{Module::Install::Base};
+}
 
 my $makefile;
 sub WriteMakefile {
@@ -37,7 +40,7 @@ sub WriteMakefile {
 }
 
 END {
-    if ($makefile) {
+    if ( $makefile ) {
         $makefile->write;
         $makefile->Meta->write;
     }

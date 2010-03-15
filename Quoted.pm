@@ -1,5 +1,5 @@
 package Text::Quoted;
-our $VERSION = "2.05";
+our $VERSION = "2.06";
 use 5.006;
 use strict;
 use warnings;
@@ -59,14 +59,7 @@ is the quotation string.
 =cut
 
 sub extract {
-    return organize( "",
-        map +{
-            raw    => $_->{'raw'},
-            empty  => $_->{'empty'},
-            text   => $_->{'text'},
-            quoter => $_->{'quoter'},
-        }, classify( @_ )
-    );
+    return organize( "", classify( @_ ) );
 }
 
 =head1 CREDITS
@@ -154,17 +147,17 @@ sub find_below {
 
 # BITS OF A TEXT LINE
 
-my $quotechar  = qq{[!#%=|:]};
-my $quotechunk = qq{(?:$quotechar(?!\\w)|\\w*>+)};
-my $quoter     = qq{(?:(?i)(?:$quotechunk(?:[ \\t]*$quotechunk)*))};
-
-my $separator = q/(?:[-_]{2,}|[=#*]{3,}|[+~]{4,})/;
+my $quotechar  = qr/[!#%=|:]/;
+my $separator  = qr/[-_]{2,} | [=#*]{3,} | [+~]{4,}/x;
+my $quotechunk = qr/(?!$separator *\z)(?:$quotechar(?!\w)|\w*>+)/;
+my $quoter     = qr/$quotechunk(?:[ \t]*$quotechunk)*/;
 
 sub defn($) { return $_[0] if (defined $_[0]); return "" }
 
 sub classify {
     my $text = shift;
-    $text = "" unless defined $text;
+    return { raw => undef, text => undef, quoter => undef }
+        unless defined $text && length $text;
     # If the user passes in a null string, we really want to end up with _something_
 
     # DETABIFY
@@ -175,8 +168,8 @@ sub classify {
         my %line = ( raw => $_ );
         @line{'quoter', 'text'} = (/\A *($quoter?) *(.*?)\s*\Z/o);
         $line{hang}      = Hang->new( $line{'text'} );
-        $line{empty}     = $line{hang}->empty() && $line{'text'} !~ /\S/;
-        $line{separator} = $line{text} =~ /^$separator$/o;
+        $line{empty}     = 1 if $line{hang}->empty() && $line{'text'} !~ /\S/;
+        $line{separator} = 1 if $line{text} =~ /\A *$separator *\Z/o;
         push @lines, \%line;
     }
 
@@ -223,8 +216,8 @@ sub classify {
     }
 
     # Reapply hangs
-    for (grep $_->{hang}, @paras) {
-        next unless my $str = $_->{hang}->stringify;
+    for (grep $_->{'hang'}, @paras) {
+        next unless my $str = (delete $_->{hang})->stringify;
         $_->{text} = $str . " " . $_->{text};
     }
     return @paras;
